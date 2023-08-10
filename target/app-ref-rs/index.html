@@ -1,0 +1,107 @@
+<html ng-app='AngularIntro'>
+  <head>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+  </head>
+  <body ng-controller='SimpleController'>
+    Id:
+    <input type='text' ng-model='pojoModel.id'>
+    Nome:
+    <input type='text' ng-model='pojoModel.nome'>
+    
+	<input type='button' value='Incluir' ng-click='incluir()'>
+	<input type='button' value='Obter por PK' ng-click='obterPorChavePrimaria()'>
+	<input type='button' value='Listar' ng-click='listar()'>
+	<input type='button' value='Alterar' ng-click='alterar(pojoModel.id)'>
+	<input type='button' value='Excluir' ng-click='excluir(pojoModel.id)'>
+ 
+    <table>
+        <tr>
+            <td>
+                {{pojoModel.nome}}
+            </td>
+        </tr>
+      <tr ng-repeat="pojoIter in pojos">
+        <td>{{pojoIter}}</td>
+      </tr>
+    </table>
+ 
+    <script>
+     //modulo principal utilizado no ng-app
+      var module = angular.module('AngularIntro', []);
+      
+      //Factory para acesso ao Backend 
+      module.factory('simpleService', ['$http', function($http){
+        var service = {}; 
+        service.nameList = ['Monica', 'Magali', 'Cascao', 'Cebolinha']; 
+        
+        service.listar = function(){
+           return $http.get('http://localhost:8080/app-ref-rs/rest/hello/json/dto');
+        }
+        
+        service.obterPorChavePrimaria = function(){
+            return $http.get('http://localhost:8080/app-ref-rs/rest/hello/1');
+         }
+        
+        service.incluir = function(pojoModel){
+        	return $http.post('http://localhost:8080/app-ref-rs/rest/hello', pojoModel);
+         }
+        
+        service.alterar = function(pojoModel,id){
+        	return $http.put('http://localhost:8080/app-ref-rs/rest/hello/' + id, angular.extend({}, pojoModel));
+         }
+        
+        service.excluir = function(id){
+        	return $http['delete']('http://localhost:8080/app-ref-rs/rest/hello/' +id);
+         }
+        
+        service.addName = function(name){
+          if(service.nameList.indexOf(name) == -1)
+            service.nameList.push(name); 
+        }
+ 
+        return service;
+      }])
+ 
+      //Controller AngularJs responsável por ligar a View ao Modelo
+      module.controller('SimpleController', function($scope, simpleService){
+        
+    	$scope.pojoModel = {};
+    	  
+	   	//Expondo no escopo a lista de nomes
+	    $scope.pojos = simpleService.nameList; 
+	
+
+		$scope.listar = function(){
+			simpleService.listar().then(function(response){
+		     $scope.pojos = response.data;   
+			});
+		}
+
+		$scope.obterPorChavePrimaria = function(){
+			simpleService.obterPorChavePrimaria().then(function(response){
+		     	$scope.pojoModel = response.data;   
+			});
+		}
+		
+   	  	$scope.incluir = function(){
+   	  		simpleService.incluir($scope.pojoModel);
+   	  	}
+   	  	
+   	  	$scope.alterar = function(){
+   	  		simpleService.alterar($scope.pojoModel,$scope.pojoModel.id);
+   	  	}
+   	  	
+   	  	$scope.excluir = function(id){
+   	  		simpleService.excluir(id);
+   	  	}
+   	  	
+        //aciona o serviço criado na factory para adicionar o nome na lista contida no servico chamada nameList
+        $scope.addName = function(){
+          simpleService.addName($scope.name);
+          $scope.name = '';
+        }
+      });
+    </script>
+ 
+  </body>
+</html>

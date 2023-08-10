@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR"  ng-app='reportModule'>
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no" />
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<script type="text/javascript"
+	src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+ google.charts.load('current', {'packages':['corechart']});
+</script>
+</head>
+<body ng-controller='ReportController'
+	style="font-family: Arial; border: 0 none;">
+	<div id="chart_div" style="width: 900px; height: 500px;"></div>
+	
+	<script
+	src="http://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+	
+	 <script>
+     //modulo principal utilizado no ng-app
+      var module = angular.module('reportModule', []);
+      
+      //Factory para acesso ao Backend 
+      module.factory('reportService', ['$http', function($http){
+        var service = {}; 
+        service.nameList = ['Monica', 'Magali', 'Cascao', 'Cebolinha']; 
+        
+        service.listar = function(){
+           return $http.get('http://localhost:8080/app-ref-jax-rs/rest/v1/report/dashboards');
+        }
+        
+        service.addName = function(name){
+          if(service.nameList.indexOf(name) == -1)
+            service.nameList.push(name); 
+        }
+ 
+        return service;
+      }])
+ 
+      //Controller AngularJs responsável por ligar a View ao Modelo
+      module.controller('ReportController', function($scope, reportService){
+	        
+    	$scope.pojoModel = {};
+		$scope.listar = function(){
+			reportService.listar().then(function(response){
+		     $scope.dashboards = response.data;  
+		     var produtosR1 = [];
+		     var flagSaltNextDash = false;
+		     for (var i = 1; i < $scope.dashboards.length && !flagSaltNextDash; i++) {
+		    	 var item = $scope.dashboards[i];
+		    	 var itemArrayFilter = [];
+		    	 for (var l = 0; l < 9; l++) {
+		    		 if(item[l] != null && item[l] == 'Riscos de Engenharia'){
+		    			 flagSaltNextDash = true;
+		    			 break;
+		    		 } else if(item[l] != null) {
+		    		 	itemArrayFilter.push(item[l]);
+		    		 }
+				}
+		    	 
+		    	if(itemArrayFilter.length > 0) {
+		    	 	produtosR1.push(itemArrayFilter);
+		    	}
+			 }
+		     google.load("visualization", "1", {"callback" :  drawVisualization(produtosR1,'Produtos R1')});
+// 		     google.charts.setOnLoadCallback();
+			});
+		}
+			
+		$scope.listar()
+
+	   	function drawVisualization(dados, nameDashboard) {
+	   		
+	        // Some raw data (not necessarily accurate)
+// 	        var data = google.visualization.arrayToDataTable([
+// 	         ['Dias', '01/05/2004', '01/05/2004', '01/05/2004', '01/05/2004', '01/05/2004', '01/05/2004'],
+// 	         ['Orçamento com sucesso',  165,      938,         522,             998,           450,      914.6],
+// 	         ['Orçamento com falhas',  135,      1120,        599,             1268,          288,      682.54],
+// 	         ['Transmissões com sucesso',  157,      1167,        587,             807,           397,      623.67],
+// 	         ['Transmissões com falhas',  139,      1110,        615,             968,           215,      609.4],
+// 	         ['% de conversao',  90,      691,         629,             1026,          366,      569.6]
+// 	      ]);
+	        var data = google.visualization.arrayToDataTable(dados);
+	        
+
+// 	        ["Produtos R1", "06/03/2017", "07/03/2017", "08/03/2017", "09/03/2017", "10/03/2017", "13/03/2017",…]
+// 	        ["Orçamentos com Sucesso", 954, 962, 1217, 1591, 1385, 1265, 1467, null]
+// 	        ["Orçamentos com Falhas", 14, 8, 25, 12, 64, 144, 58, null]
+// 	        ["Transmissões com Sucesso", 27, 75, 74, 147, 100, 77, 126, null]
+// 	        ["Transmissões com Falhas", 0, 1, 0, 1, 1, 0, 1, null]
+// 	        ["% Conversão", 0.02830188679245283, 0.07796257796257797, 0.06080525883319639, 0.09239472030169704,…]
+// 	        [null, "Sinistros Avisados", 70, 77, 76, 64, 73, 87, 83]
+// 	        [null, "Mêdia/Mês Sinistros Avisados", 40.68, 40.68, 40.68, 40.68, 40.68, 40.68, 40.68, 40.68, 40.68,…]
+	 
+	    var options = {
+	      is3D: true,
+	      title : nameDashboard,
+	      //vAxis: {title: 'Cups'},
+	 	vAxes: {0: {viewWindowMode:'explicit',
+	                      gridlines: {color: 'transparent'},
+	                      },
+	                  1: {gridlines: {color: 'transparent'},
+	                      format:"R$ ###,###"},
+	                  },
+
+	      hAxis: {},
+	     // yAxis: {title: 'Total',format:'R$ ###,###'},
+	      seriesType: 'bars',
+	     //  series: {5: {type: 'line'}}
+	        series: {
+	           // 4:{ type: "bars", targetAxisIndex: 4, format:"%##" },
+	            5: { type: "line", targetAxisIndex: 1,format:'R$ ###,###'}
+	        }
+	    };
+
+	    var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+	    chart.draw(data, options);
+	  }
+
+      });
+    </script>
+</body>
+
+
+</html>
+
+
+
+
